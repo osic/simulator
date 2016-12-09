@@ -1,0 +1,28 @@
+---
+- name: deploy vms accorss hosts
+  hosts: simulator
+  vars_files:
+    - vars/main.yml
+  tasks:
+  - file: path=/opt/templates/vmnode-config/ state=directory recurse=yes
+  - name: copy necessary file
+    copy: src="{{ playbook_dir }}/../{{ item }}" dest="/opt/{{ item }}"
+    with_items:
+      - functions.rc
+      - vars.rc
+      - setup-host.sh
+      - deploy-vms.sh
+      - sim_inv.json
+  - name: copy VMs xml template
+    template: src="templates/vmnode-config/{{ item }}" dest="/opt/templates/vmnode-config/{{ item }}" force=yes
+    with_items:
+      - cinder.openstackci.local.xml
+      - infra.openstackci.local.xml
+      - logging.openstackci.local.xml
+      - network.openstackci.local.xml
+      - nova_compute.openstackci.local.xml
+      - swift.openstackci.local.xml
+  - name: setup host prior to deplying vms
+    shell: bash setup-host.sh
+    args:
+      chdir: /opt

@@ -1,0 +1,10 @@
+---
+- name: deploy vms accorss hosts
+  hosts: simulator
+  vars_files:
+    - vars/main.yml
+  tasks:
+  - name: deploy vms
+    shell: bash deploy-vms.sh
+    args:
+      chdir: /opt
