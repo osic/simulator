@@ -4,9 +4,6 @@ Maximize your Hardware with Server Simulator
 Table of Contents
 -----------------
 * [#Introduction]()
-* [#Different ways to setup live migration in your Openstack Cloud]()
-* [#Benchmarking Live migration in your Cloud]()
-* [#Lessrned]()
 
 Introduction
 ------------
@@ -76,11 +73,3 @@ further work
 
 - rebuild specific VM fapability
 
-Lessons learned
-----------------
-
-Below are some lessons learned while setting up the clouds to start testing live migration.
-
-1. in your phsical compute nodes, there should be a mapping between compute hosts names and their respective local hypervisor name. Hypervisor name can be detected with the nova hypervisor-list command.
-
-2. Cinder Volume and nova should be located in the same availability zone if you plan to live migrate volume backed VMs
