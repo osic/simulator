@@ -13,9 +13,11 @@ TODO: How can this help you
 
 How to use
 ----------
-apt-get install python-pip
-pip install netaddr
-sudo apt-get install python-yaml
+
+
+	apt-get install python-pip
+	pip install netaddr
+	sudo apt-get install python-yaml
 
 
 1. install ansible
@@ -33,12 +35,14 @@ sudo apt-get install python-yaml
 	
 	cd simulator
 	python generate_sim_inv.py
+
 4. Bootstrap your hosts 
 
 	cd paybooks
 	ansible-playbook -i inventory/static-inventory.yml bootstrap_hosts.yml
 
 5. Install cobbler in your deployment host
+
 	cd ..
 	./setup-cobbler.sh (look for templates preseeds)
 
