@@ -1,10 +1,10 @@
 ---
 vms_networks:
- br-pxe: br-pxe
- br-mgmt: br-mgmt
- br-flat: br-flat
- br-vlan: br-vlan
- br-vxlan: br-vxlan
- br-storage: br-storage
+ pxe: br-pxe
+ mgmt: br-mgmt
+ flat: br-flat
+ vlan: br-vlan
+ vxlan: br-vxlan
+ storage: br-storage
 
 use_disk: sdc

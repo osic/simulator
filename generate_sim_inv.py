@@ -6,6 +6,7 @@ import sys
 import yaml
 import netaddr
 import json
+import re
 
 LIB_DIR = path.join(os.getcwd(), 'lib')
 sys.path.append(LIB_DIR)
@@ -62,21 +63,58 @@ def get_sim_hosts(user_defined_config):
     return user_defined_config.get('simulator_hosts').keys()
 
 
-def generate_inv(sim_hosts, manager, vms_per_host, nodes_index):
+def generate_inv(sim_hosts, manager, vms_per_host):
+    nodes_index = 1
     inv = {}
     for host in sim_hosts:
       inv[host] = {}
       inv[host]["nova_compute"] ={}
       for i in range(vms_per_host):
-        inv[host]["nova_compute"]["compute" + str(nodes_index) ] = {}
-        inv[host]["nova_compute"]["compute" + str(nodes_index)]["ansible_pxe_host"] = manager.get('pxe')
-        inv[host]["nova_compute"]["compute" + str(nodes_index)]["ansible_mgmt_host"] = manager.get('mgmt')
-        inv[host]["nova_compute"]["compute" + str(nodes_index)]["ansible_tunnel_host"] = manager.get('tunnel')
-        inv[host]["nova_compute"]["compute" + str(nodes_index)]["ansible_storage_host"] = manager.get('storage')
-        inv[host]["nova_compute"]["compute" + str(nodes_index)]["ansible_flat_host"] = manager.get('flat')
+        inv[host]["nova_compute"]["simulated" + str(nodes_index) ] = {}
+        inv[host]["nova_compute"]["simulated" + str(nodes_index)]["ansible_pxe_host"] = manager.get('pxe')
+        inv[host]["nova_compute"]["simulated" + str(nodes_index)]["ansible_mgmt_host"] = manager.get('mgmt')
+        inv[host]["nova_compute"]["simulated" + str(nodes_index)]["ansible_tunnel_host"] = manager.get('tunnel')
+        inv[host]["nova_compute"]["simulated" + str(nodes_index)]["ansible_storage_host"] = manager.get('storage')
+        inv[host]["nova_compute"]["simulated" + str(nodes_index)]["ansible_flat_host"] = manager.get('flat')
         nodes_index = nodes_index + 1
     return inv
-    
+
+def configure_simulator(var_file, var_file_ansible, user_defined_config): 
+    # Load the user defined configuration file
+    cobbler_interface = user_defined_config.get('cobbler_interface')
+    dhcp_range = user_defined_config.get('dhcp_range')
+    DEVICE_NAME = user_defined_config.get('DEVICE_NAME')
+    DEFAULT_NETWORK = user_defined_config.get('DEFAULT_NETWORK')
+    cidr_networks = user_defined_config.get('cidr_networks')
+    pxe_cidr = cidr_networks['pxe']['subnet']
+    pxe_gateway = cidr_networks['pxe']['gateway']
+    use_disk = user_defined_config.get('use_disk')
+    with open(var_file, 'r+b') as f:
+      text = f.read()
+      p = re.compile('cobbler_interface=.*')
+      text = p.sub('cobbler_interface=' + cobbler_interface, text)
+      p = re.compile('dhcp_range=.*')
+      text = p.sub('dhcp_range=' + dhcp_range, text)
+      p = re.compile('DEVICE_NAME:-.*')
+      text = p.sub('DEVICE_NAME:-' + DEVICE_NAME + '}"' , text)
+      p = re.compile('DEFAULT_NETWORK:-.*')
+      text = p.sub('DEFAULT_NETWORK:-' + DEFAULT_NETWORK + '}"' , text)
+      p = re.compile('pxe_subnet=.*')
+      text = p.sub('pxe_subnet=' + str(netaddr.IPNetwork(pxe_cidr).network), text)
+      p = re.compile('pxe_gateway=.*')
+      text = p.sub('pxe_gateway=' + pxe_gateway, text)
+      p = re.compile('pxe_mask=.*')
+      text = p.sub('pxe_mask=' + str(netaddr.IPNetwork(pxe_cidr).netmask), text)
+      f.seek(0)
+      f.truncate()
+      f.write(text)
+    with open(var_file_ansible, 'r+b') as f:
+      text = f.read()
+      p = re.compile('use_disk=.*')
+      text = p.sub('use_disk=' + use_disk, text)
+      f.seek(0)
+      f.truncate()
+      f.write(text)
 
 def main():
     "main function"
@@ -87,22 +125,25 @@ def main():
     # get hosts that will be used by simulator
     sim_hosts = get_sim_hosts(user_defined_config)
     vms_per_host = int(user_defined_config.get('vms_per_host'))
-    nodes_index = int(user_defined_config.get('nodes_index'))
 
     # get cidr_networks
     cidr_networks = user_defined_config.get('cidr_networks')
     if not cidr_networks:
         raise SystemExit('No nodes CIDR specified in user config')
     try: 
-        pxe_cidr = cidr_networks['pxe']
-        mgmt_cidr = cidr_networks['mgmt']
-        tunnel_cidr = cidr_networks['tunnel']
-        storage_cidr = cidr_networks['storage']
-        flat_cidr = cidr_networks['flat']
+        pxe_cidr = cidr_networks['pxe']['subnet']
+        pxe_gateway = cidr_networks['pxe']['gateway']
+        mgmt_cidr = cidr_networks['mgmt']['subnet']
+        tunnel_cidr = cidr_networks['tunnel']['subnet']
+        storage_cidr = cidr_networks['storage']['subnet']
+        flat_cidr = cidr_networks['flat']['subnet']
     except Exception as e:
         raise SystemExit('one of pxe, mgmt, tunnel, flat or storage network is not'
                          'specified in user config.')
 
+    var_file = "vars.rc"
+    var_file_ansible = "playbooks/vars/main.yml"
+    configure_simulator(var_file, var_file_ansible, user_defined_config)
     # Load all of the IP addresses that we know are used
     set_used_ips(user_defined_config)
     # exclude broadcast and network ips for each cidr
@@ -116,7 +157,7 @@ def main():
     manager = ip.IPManager(queues={'pxe': pxe_cidr, 'mgmt': mgmt_cidr, 'tunnel': tunnel_cidr, 'storage': storage_cidr, 'flat': flat_cidr},
                              used_ips=USED_IPS)
     # generate inventory
-    inv = generate_inv(sim_hosts, manager, vms_per_host, nodes_index)
+    inv = generate_inv(sim_hosts, manager, vms_per_host)
     # save inventory
     with open('sim_inv.json', 'w') as outfile:
       json.dump(inv, outfile)

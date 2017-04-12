@@ -1,26 +1,44 @@
 ---
 cidr_networks:
-  pxe: 172.22.4.0/22
-  mgmt: 172.22.12.0/22
-  tunnel: 172.22.144.0/22
-  storage: 172.22.140.0/22
-  flat: 172.22.148.0/22
+  pxe:
+    subnet: 172.22.172.0/22
+    gateway: 172.22.172.1
+  mgmt:
+    subnet: 172.22.8.0/22
+  tunnel:
+    subnet: 172.22.104.0/22
+  storage:
+    subnet: 172.22.100.0/22
+  flat:
+    subnet: 172.22.108.0/22
 
+# range of ips should belong to PXE network
+dhcp_range: 172.22.172.50,172.22.175.254
+# interface used by cobbler for pxebooting
+cobbler_interface: "br-pxe"
+
+# number of VMs to create per host
 vms_per_host: 10
 
 used_ips:
-  - "172.22.4.1,172.22.4.44"
-  - "172.22.12.1,172.22.12.44"
-  - "172.22.144.1,172.22.144.44"
-  - "172.22.140.1,172.22.140.44"
-  - "172.22.148.1,172.22.148.44"
-
-nodes_index: 20
+  - "172.22.172.1,172.22.172.31"
+  - "172.22.8.1,172.22.8.44"
+  - "172.22.104.1,172.22.104.44"
+  - "172.22.100.1,172.22.100.44"
+  - "172.22.108.1,172.22.108.44"
 
 simulator_hosts:
   simulator01:
-    ip: 172.22.12.41
+    ip: 172.22.172.30
   simulator02:
-    ip: 172.22.12.42
-  simulator03:
-    ip: 172.22.12.43
+    ip: 172.22.172.31
+
+# Set the default preseed device name.
+#  This is being set because sda is on hosts, vda is kvm, xvda is xen.
+DEVICE_NAME: "vda"
+
+# This is set to instruct the preseed what the default network is expected to be
+DEFAULT_NETWORK: "eth0"
+
+# whcih disk to partition and mount to host VMs in each node
+use_disk: sdc
