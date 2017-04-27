@@ -96,14 +96,13 @@ service xinetd start
 update-rc.d cobblerd defaults
 
 # Get ubuntu server image
-#mkdir_check "/var/cache/iso"
-#pushd /var/cache/iso
-#  if [ -f "/var/cache/iso/ubuntu-14.04.4-server-amd64.iso" ]; then
-#    rm /var/cache/iso/ubuntu-14.04.4-server-amd64.iso
-#  fi
-#  wget http://old-releases.ubuntu.com/releases/14.04.0/ubuntu-14.04.4-server-amd64.iso
-#  wget http://releases.ubuntu.com/trusty/ubuntu-14.04.4-server-amd64.iso
-#popd
+mkdir_check "/var/cache/iso"
+pushd /var/cache/iso
+  if [ -f "/var/cache/iso/ubuntu-14.04.4-server-amd64.iso" ]; then
+    rm /var/cache/iso/ubuntu-14.04.4-server-amd64.iso
+  fi
+  wget http://releases.ubuntu.com/trusty/ubuntu-14.04.5-server-amd64.iso
+popd
 
 # import cobbler image
 if ! cobbler distro list | grep -qw "ubuntu-14.04.4-server-x86_64"; then
